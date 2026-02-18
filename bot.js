@@ -6,7 +6,7 @@ const qrcode = require('qrcode-terminal');
 const CONFIG = {
     API_KEY: "AIzaSyBDaDpdh2ZlJSDWJ89LXKNwG9jgzUcVDM4",
     NICKNAME: "Antu",
-    MODEL_NAME: "gemini-2.0-flash", // Updated to fix 404 error
+    MODEL_NAME: "gemini-2.0-flash", 
     MAX_MEMORY: 30 
 };
 
@@ -17,7 +17,7 @@ const CONTACTS = {
     '8801816844231@c.us': 'Ayman',
     '8801601534642@c.us': 'Tomato',
     '8801581872622@c.us': 'Antu',
-    '8801757360041@c.us': 'Sujana'
+    '8801757360041@c.us': 'Sujana' // Fixed: Comma was missing before this
 };
 
 const chatMemory = new Map();
@@ -36,7 +36,7 @@ client.on('qr', qr => qrcode.generate(qr, { small: true }));
 
 client.on('ready', () => {
     console.log('---------------------------------');
-    console.log('>>> ANTU LUXURY BOT: STATUS ON'); // On message
+    console.log('>>> ANTU LUXURY BOT: STATUS ON'); 
     console.log('---------------------------------');
 });
 
@@ -54,7 +54,7 @@ client.on('message', async (message) => {
     const senderId = message.from;
     const senderName = CONTACTS[senderId] || "someone";
     
-    // NEW RULE: Only stand down if you SENT a message in THIS specific chat recently
+    // Safety check: Don't reply if YOU just messaged THIS person
     const lastInteraction = lastUserActivity.get(senderId) || 0;
     const isRecentlyActiveHere = (Date.now() - lastInteraction < 30000); 
 
@@ -65,7 +65,6 @@ client.on('message', async (message) => {
 
     console.log(`[STATUS: ON] Handling message from ${senderName}...`);
 
-    // Memory Logic
     if (!chatMemory.has(senderId)) chatMemory.set(senderId, []);
     const history = chatMemory.get(senderId);
     history.push({ role: "user", parts: [{ text: message.body }] });
@@ -83,7 +82,6 @@ client.on('message', async (message) => {
         });
         
         const reply = result.response.text().trim();
-        if (reply.includes("OWNER_FALLBACK")) return;
 
         // FIXED DELAY: 2 seconds per line
         const lines = reply.split('\n').length;
