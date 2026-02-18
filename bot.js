@@ -3,11 +3,10 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const qrcode = require('qrcode-terminal');
 
-// --- JARVIS CONFIGURATION ---
 const CONFIG = {
     API_KEY: process.env.GEMINI_API_KEY,
     NICKNAME: "Jarvis",
-    OWNER_ID: '8801581872622', // Your ID for identification
+    OWNER_ID: '8801581872622', 
     MODEL_NAME: "gemini-2.0-flash",
     MAX_MEMORY: 15 
 };
@@ -31,7 +30,6 @@ const client = new Client({
     puppeteer: { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }
 });
 
-// --- ENGINE START ---
 client.on('qr', qr => qrcode.generate(qr, { small: true }));
 
 client.on('ready', () => {
@@ -56,39 +54,28 @@ client.on('message_create', async (msg) => {
 
     if (!botActive) return;
 
-    // TRIGGER LOGIC: Responds to you (if called) or your Luxury Contacts
+    // TRIGGER LOGIC
     if (!msg.fromMe || (msg.fromMe && content.includes("jarvis"))) {
         const senderId = msg.fromMe ? msg.to : msg.from;
-        
-        // Only reply to saved contacts to protect API quota
         if (!CONTACTS[senderId] && !msg.fromMe) return;
 
-        console.log(`[JARVIS] Processing request from: ${CONTACTS[senderId] || 'Sir'}`);
-
-        const systemPrompt = `You are JARVIS, a sophisticated research assistant for Antu, a meteorology researcher.
-        If the message mentions 'search', provide a factual, analytical research-grade report.
-        If talking to Antu: Call him 'Sir'. 
-        If talking to Babui: Be deeply affectionate on Antu's behalf.
-        Tone: Elite, tech-savvy, and efficient. Max 2-3 sentences unless it's a 'search'.`;
+        const systemPrompt = `You are JARVIS. Assisting Antu, a meteorology researcher.
+        If the message contains 'search', provide a data-heavy analytical report.
+        If Antu: Call him 'Sir'. If Babui: Be loving.
+        Tone: Elite, research-focused. Max 2 sentences unless searching.`;
 
         try {
             const result = await model.generateContent(`${systemPrompt}\n\nInput: ${msg.body}`);
             const reply = result.response.text().trim();
-            
             const chat = await msg.getChat();
             await chat.sendStateTyping();
             
-            // Artificial delay for realism
             setTimeout(async () => {
                 await client.sendMessage(senderId, reply);
             }, 2500);
 
         } catch (e) {
-            if (e.message.includes("429")) {
-                console.log(">>> [QUOTA ALERT] Gemini is cooling down. Wait 30s.");
-            } else {
-                console.error("Jarvis brain fault:", e.message);
-            }
+            console.error(e.message.includes("429") ? "[QUOTA] Cooling down..." : "Jarvis Error:", e.message);
         }
     }
 });
